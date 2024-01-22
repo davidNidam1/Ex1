@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/david_98/Ex1/src/BloomFilter.cpp
+iostream
+-
+bitset
+-
+functional
+-
+vector
+-
+
+/home/david_98/Ex1/tests/BloomFilterTest.cpp
+gtest/gtest.h
+-
+../src/BloomFilter.cpp
+/home/david_98/Ex1/src/BloomFilter.cpp
+
