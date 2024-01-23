@@ -14,12 +14,12 @@ https://github.com/google/googletest/archive/03597a01ee50ed
 
 enable_testing()
 set(SOURCE_FILES
-src/BloomFilter.cpp # this is where the code we want to test
+src/FalsePositive.cpp # this is where the code we want to test
 )
 
 set(TEST_FILES
 tests/test_main.cpp # this is the main for tests
-tests/BloomFilterTest.cpp # this file contain the tests
+tests/FalsePositiveTest.cpp # this file contain the tests
 )
 
 add_executable(CalcTests ${TEST_FILES})
