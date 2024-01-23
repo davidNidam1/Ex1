@@ -12,15 +12,16 @@ private:
     std::function<size_t(const std::string&)> hashFunction2;
 
 public:
-    // Constructor for one hash function
-    BloomFilter(size_t size, const std::function<size_t(const std::string&)>& hashFunction)
-        : size(size), bitArraySelector(size, false), hashFunction1(hashFunction), hashFunction2(nullptr) {
-    }
+    // Constructor for hash functions
+    BloomFilter(size_t size, const std::vector<std::function<size_t(const std::string&)>>& hashFunctions)
+        : size(size), bitArraySelector(size, false) {
+        if (hashFunctions.size() >= 1) {
+            hashFunction1 = hashFunctions[0];
+        }
 
-    // Constructor for two hash functions
-    BloomFilter(size_t size, const std::function<size_t(const std::string&)>& hashFunction1,
-                 const std::function<size_t(const std::string&)>& hashFunction2)
-        : size(size), bitArraySelector(size, false), hashFunction1(hashFunction1), hashFunction2(hashFunction2) {
+        if (hashFunctions.size() >= 2) {
+            hashFunction2 = hashFunctions[1];
+        }
     }
 
 
