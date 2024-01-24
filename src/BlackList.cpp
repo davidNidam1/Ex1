@@ -11,7 +11,9 @@ BlackList::BlackList(){}
 bool BlackList::isBlackListed(const std::string& item) const {
     // Search for the item in the blacklisted items
     for (const std::string& blackListedItem : blackListedItems) {
+        //std::cout << "item: " << item << std::endl;
         if (blackListedItem == item) {
+            //std::cout << "blackListedItem: " << blackListedItem << std::endl;
             return true; // Item is blacklisted
         }
     }
@@ -26,4 +28,3 @@ void BlackList::addToBlackList(const std::string& item) {
         blackListedItems.push_back(item);
     } 
 }    
-

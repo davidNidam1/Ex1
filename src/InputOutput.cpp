@@ -18,8 +18,8 @@ void InputOutput::run() {
     }
 }
 
+//std::cout << "Enter the size of the Bloom filter array and hash functions (1 or 2): ";
 bool InputOutput::processBloomParameters() {
-    std::cout << "Enter the size of the Bloom filter array and hash functions (1 or 2): ";
     std::string firstLine;
     std::getline(std::cin, firstLine);
 
@@ -52,6 +52,8 @@ bool InputOutput::areHashFunctionsValid(const std::set<int>& hashFunctions) cons
 }
 
 void InputOutput::processInputLines() {
+    // create instance of an empty black list
+    BlackList blackList;
     // Process input lines in an infinite loop
     while (true) {
         std::string inputLine;
@@ -65,9 +67,7 @@ void InputOutput::processInputLines() {
             // Ignore invalid input lines
             continue;
         }
-
-        // create instance of an empty black list
-        BlackList blackList;
+        
         // Handle the command logic
         handleCommand(command, url, bloomFilter, blackList);
     }
@@ -77,7 +77,7 @@ bool InputOutput::getBloomSize(size_t &bloomSize, std::istringstream &firstLineS
     firstLineStream >> bloomSize;
 
     if (firstLineStream.fail() || bloomSize <= 0) {
-        std::cout << "Invalid bloom size. Please enter a positive integer." << std::endl;
+        std::cout << std::endl;
         return false;  // Input is invalid
     }
 
@@ -90,8 +90,9 @@ bool InputOutput::getHashFunctions(std::set<int> &hashFunctions, std::istringstr
         hashFunctions.insert(currentHashFunction);
     }
 
-    if (firstLineStream.fail() || hashFunctions.empty() || !areHashFunctionsValid(hashFunctions)) {
-        std::cout << "Invalid input. Please enter the correct format." << std::endl;
+    //firstLineStream.fail() ||
+    if (hashFunctions.empty() || !areHashFunctionsValid(hashFunctions)) {
+        std::cout << std::endl;
         return false;  // Input is invalid
     }
 
@@ -117,10 +118,11 @@ void InputOutput::handleCommand(const int command, const std::string &url, Bloom
         // Check if URL is blacklisted
         bool isBlacklisted = bloomFilter.checkUrl(url);
         // Output the result
-        std::cout << "Blacklisted: " << isBlacklisted;
+        std::cout << (isBlacklisted ? "true" : "false");
+        if (isBlacklisted == false){std::cout << std::endl;}
         if (isBlacklisted) {
             bool positiveOrNegative = blackList.isBlackListed(url);
-            std::cout << " positiveOrNegative: " << positiveOrNegative;
+            std::cout << (positiveOrNegative ? " true" : " false") << std::endl;
         }
     }
 }
