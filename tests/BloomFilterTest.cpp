@@ -1,28 +1,28 @@
-// BloomFilterTest.cpp
-
 #include <gtest/gtest.h>
-// cmake -B build -S .#include "../src/BloomFilter.h"
-#include "../src/BloomFilter.h"
+#include "../src/BloomFilter.cpp"
 
-// Test case for BloomFilter
-TEST(BloomFilterTest, BasicTest) {
-    // Test with one hash function
-    BloomFilter filter1(1000, std::hash<std::string>{});
+// Test fixture for BloomFilter
+class BloomFilterTest : public ::testing::Test {
+protected:
+    // No setup needed for this test fixture
+};
 
-    // Test with two hash functions
-    BloomFilter filter2(1000, std::hash<std::string>{}, [](const std::string& s) {
-        return std::hash<std::string>{}(s + "second");
-    });
+// Test cases
+TEST_F(BloomFilterTest, InsertAndCheckUrls) {
+    // Define some hash functions for testing
+    auto hashFunction1 = [](const std::string& str) { return std::hash<std::string>{}(str); };
+    auto hashFunction2 = [](const std::string& str) { return std::hash<std::string>{}(str) * 31; };
+
+    // Create BloomFilter with two hash functions
+    BloomFilter bloomFilter(100, {hashFunction1, hashFunction2});
 
     // Insert bad URLs
-    filter1.insertBadUrl("https://www.malicious1.com");
-    filter2.insertBadUrl("https://www.malicious2.com");
+    bloomFilter.insertBadUrl("example.com");
+    bloomFilter.insertBadUrl("test.com");
 
-    // Check if URLs are allegedly in the blacklist
-    EXPECT_TRUE(filter1.checkUrl("https://www.malicious1.com"));
-    EXPECT_FALSE(filter1.checkUrl("https://www.nonmalicious1.com"));
-
-    EXPECT_TRUE(filter2.checkUrl("https://www.malicious2.com"));
-    EXPECT_FALSE(filter2.checkUrl("https://www.nonmalicious2.com"));
+    // Check URLs
+    EXPECT_TRUE(bloomFilter.checkUrl("example.com"));
+    EXPECT_TRUE(bloomFilter.checkUrl("test.com"));
+    EXPECT_FALSE(bloomFilter.checkUrl("google.com"));
 }
 
