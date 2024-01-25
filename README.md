@@ -20,8 +20,8 @@ Those are the steps needed to be performed:
    g++ -o ex1 ./Main.cpp ./BlackList.cpp ./BloomFilter.cpp ./Hashs.cpp ./InputOutput.cpp
 Nou you can insert inputs to check the Bloom-Filter.
 
-## work depiction:
-# Key Elements
+
+## Key Elements (work depiction):
 - Test-Driven Development (TDD)
 We followed TDD principles to write tests before implementing the Bloom filter.
 This allowed code integrity and functionality through iterative testing.
