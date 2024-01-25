@@ -3,13 +3,13 @@
 This project implements a Bloom filter in C++ for a URL filtering system. A Bloom filter is a probabilistic data structure that efficiently determines if an item is a member of a set without storing the items themselves. The system uses hash functions to add URLs to a blacklist and check if a URL is blacklisted.
 
 ## Useful links
-# Link to the current repository (GitHub):
+### Link to the current repository (GitHub):
 https://github.com/davidNidam1/Ex1
 
-# Link to jira:
+### Link to jira:
 https://davidnidam.atlassian.net/jira/software/projects/EX1/boards/3/backlog?epics=visible
 
-# Link to the docker repository:
+### Link to the docker repository:
 https://hub.docker.com/repository/docker/davidnidam/foobar_app/general
 
 ## Running instructions:
