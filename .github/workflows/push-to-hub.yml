@@ -1,0 +1,20 @@
+name: Publish Docker image
+on:
+  release:
+    types: [published]
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Set image tag based on release version
+        id: meta
+        run: echo "tags=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+      - name: Log in to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and tag Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/foobar_app:${{ env.tags }} .
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/foobar_app:${{ env.tags }}
