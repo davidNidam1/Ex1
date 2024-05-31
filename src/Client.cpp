@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define PORT 8080
+#define PORT 5000
 #define BUFFER_SIZE 1024
 
 int main()
@@ -30,11 +30,15 @@ int main()
         return -1;
     }
 
+    std::cout << "Attempting to connect to server..." << std::endl;
+
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         std::cerr << "Connection Failed" << std::endl;
         return -1;
     }
+
+    std::cout << "Connected to server." << std::endl;
 
     std::string input;
     std::cout << "Enter the size of the Bloom filter array and hash functions (1 or 2): ";
@@ -48,7 +52,15 @@ int main()
         send(sock, input.c_str(), input.size(), 0);
 
         valread = read(sock, buffer, BUFFER_SIZE);
-        std::cout << "Server response: " << std::string(buffer, valread) << std::endl;
+        if (valread > 0)
+        {
+            std::cout << "Server response: " << std::string(buffer, valread) << std::endl;
+        }
+        else
+        {
+            std::cerr << "Failed to read response from server." << std::endl;
+            break;
+        }
     }
 
     close(sock);

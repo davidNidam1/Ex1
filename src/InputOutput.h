@@ -15,6 +15,7 @@ public:
 
 private:
     BloomFilter bloomFilter;
+    BlackList blackList;
     bool processBloomParameters(int clientSocket);
     bool areHashFunctionsValid(const std::set<int> &hashFunctions) const;
     void processInputLines(int clientSocket);

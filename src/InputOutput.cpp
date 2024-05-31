@@ -2,24 +2,32 @@
 #include <iostream>
 #include <set>
 #include <unistd.h>
-#include <regex> // Include regex library
+#include <regex>
+#include <algorithm>
 #include "BloomFilter.h"
 #include "Hashs.h"
 #include "BlackList.h"
 
-InputOutput::InputOutput() : bloomFilter(0, {}) {}
+InputOutput::InputOutput() : blackList() // Initialize BlackList here
+{
+    // Initialize the Bloom filter with a fixed size and hash functions
+    size_t bloomSize = 1000;
+    std::set<int> hashFunctions = {1, 2}; // Example: Using hash functions 1 and 2
+    createBloomFilter(bloomSize, hashFunctions, bloomFilter);
+}
 
 void InputOutput::run(int clientSocket)
 {
-    // Process input lines from client in an infinite loop
+    // std::cout << "Client connected, processing input..." << std::endl;
+    // sendResponse(clientSocket, "Initialization successful\n");
+
+    // Move on to processing input lines in an infinite loop
     while (true)
     {
-        if (!processBloomParameters(clientSocket))
-        {
-            continue; // Restart the loop to get valid input
-        }
         processInputLines(clientSocket);
     }
+    close(clientSocket);
+    std::cout << "Client disconnected." << std::endl;
 }
 
 bool InputOutput::processBloomParameters(int clientSocket)
@@ -38,7 +46,6 @@ bool InputOutput::processBloomParameters(int clientSocket)
         return false; // Input is invalid
     }
 
-    // Read the hash functions into a set to ensure uniqueness
     std::set<int> hashFunctions;
     if (!getHashFunctions(hashFunctions, firstLineStream))
     {
@@ -66,44 +73,34 @@ bool InputOutput::areHashFunctionsValid(const std::set<int> &hashFunctions) cons
 
 void InputOutput::processInputLines(int clientSocket)
 {
-    // Create an instance of an empty blacklist
-    BlackList blackList;
-
-    // Process input lines from client
-    while (true)
+    std::string inputLine;
+    if (!receiveLine(clientSocket, inputLine))
     {
-        std::string inputLine;
-        if (!receiveLine(clientSocket, inputLine))
-        {
-            // Failed to receive input, terminate connection
-            break;
-        }
-
-        std::istringstream lineStream(inputLine);
-        int command;
-        std::string url;
-
-        if (!processInputLine(lineStream, command, url))
-        {
-            // Ignore invalid input lines
-            continue;
-        }
-
-        // Handle the command logic
-        handleCommand(command, url, bloomFilter, blackList, clientSocket);
+        std::cerr << "Failed to receive input, terminating connection..." << std::endl;
+        return; // Exit the method if receiving input fails
     }
+
+    std::istringstream lineStream(inputLine);
+    int command;
+    std::string url;
+
+    if (!processInputLine(lineStream, command, url))
+    {
+        std::cerr << "Invalid input line, ignoring..." << std::endl;
+        return; // Exit the method if the input line is invalid
+    }
+
+    handleCommand(command, url, bloomFilter, blackList, clientSocket); // Use the class member blackList
 }
 
 bool InputOutput::getBloomSize(size_t &bloomSize, std::istringstream &firstLineStream)
 {
     firstLineStream >> bloomSize;
-
     if (firstLineStream.fail() || bloomSize <= 0)
     {
-        return false; // Input is invalid
+        return false;
     }
-
-    return true; // Input is valid
+    return true;
 }
 
 bool InputOutput::getHashFunctions(std::set<int> &hashFunctions, std::istringstream &firstLineStream)
@@ -116,20 +113,16 @@ bool InputOutput::getHashFunctions(std::set<int> &hashFunctions, std::istringstr
 
     if (hashFunctions.empty() || !areHashFunctionsValid(hashFunctions))
     {
-        return false; // Input is invalid
+        return false;
     }
-
-    return true; // Input is valid
+    return true;
 }
 
 bool InputOutput::createBloomFilter(const size_t &bloomSize, const std::set<int> &hashFunctions, BloomFilter &bloomFilter)
 {
-    // Create an instance of the class Hashs, which contains the hash functions suitable for 1/2.
     Hashs hashs(hashFunctions);
-
-    // Create Bloom filter based on input parameters
     bloomFilter = BloomFilter(bloomSize, hashs.getRealHashFunctions());
-    return true; // Input is valid
+    return true;
 }
 
 void InputOutput::handleCommand(const int command, const std::string &url, BloomFilter &bloomFilter, BlackList &blackList, int clientSocket)
@@ -137,24 +130,38 @@ void InputOutput::handleCommand(const int command, const std::string &url, Bloom
     std::string response;
     if (command == 1)
     {
-        // Add URL to the blacklist
         blackList.addToBlackList(url);
         bloomFilter.insertBadUrl(url);
         response = "Added\n";
     }
     else if (command == 2)
     {
-        // Check if URL is blacklisted
-        bool isBlacklisted = bloomFilter.checkUrl(url);
-        response = (isBlacklisted ? "true" : "false");
-        if (isBlacklisted)
+        // Remove all spaces and delimiters from the URL string
+        std::string cleaned_url = url;
+        cleaned_url.erase(std::remove_if(cleaned_url.begin(), cleaned_url.end(), [](unsigned char c)
+                                         { return std::isspace(c); }),
+                          cleaned_url.end());
+
+        std::regex url_regex(R"((http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-]))");
+        std::smatch url_match;
+        if (!std::regex_search(cleaned_url, url_match, url_regex))
         {
-            bool positiveOrNegative = blackList.isBlackListed(url);
-            response += (positiveOrNegative ? " true\n" : " false\n");
+            response = "false\n";
         }
         else
         {
-            response += "\n";
+            std::string matched_part = url_match.str();
+            bool isBlacklisted = bloomFilter.checkUrl(matched_part);
+            response = (isBlacklisted ? "true" : "false");
+            if (isBlacklisted)
+            {
+                bool positiveOrNegative = blackList.isBlackListed(matched_part);
+                response += (positiveOrNegative ? " true\n" : " false\n");
+            }
+            else
+            {
+                response += "\n";
+            }
         }
     }
     sendResponse(clientSocket, response);
@@ -168,29 +175,23 @@ bool InputOutput::processInputLine(std::istringstream &lineStream, int &command,
         return false;
     }
 
-    lineStream >> url;
-    if (lineStream.fail())
+    // Read the rest of the line as the URL
+    std::getline(lineStream, url);
+    if (url.empty())
     {
         return false;
     }
+    // Remove leading spaces
+    url.erase(0, url.find_first_not_of(' '));
 
-    // Regex to check if the URL is valid
-    std::regex url_regex(R"((https?:\/\/)?((([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})|((\d{1,3}\.){3}\d{1,3}))(:\d+)?(\/\S*)?)");
-    if (!std::regex_match(url, url_regex))
-    {
-        if (command == 2) // Only return false if the command is to check URL
-        {
-            return false;
-        }
-    }
-
-    return true; // Input is valid
+    std::cout << url << std::endl;
+    return true;
 }
 
 bool InputOutput::receiveLine(int clientSocket, std::string &line)
 {
-    char buffer[1024] = {0};
-    int valread = read(clientSocket, buffer, 1024);
+    char buffer[4096] = {0};
+    long int valread = recv(clientSocket, buffer, 4096, 0);
     if (valread <= 0)
     {
         return false;
@@ -201,5 +202,20 @@ bool InputOutput::receiveLine(int clientSocket, std::string &line)
 
 void InputOutput::sendResponse(int clientSocket, const std::string &response)
 {
-    send(clientSocket, response.c_str(), response.size(), 0);
+    std::cout << "Sending response: " << response << std::endl;
+
+    const char *data = response.c_str();
+    size_t totalSent = 0;
+    size_t dataLength = response.size();
+
+    while (totalSent < dataLength)
+    {
+        ssize_t sent = send(clientSocket, data + totalSent, dataLength - totalSent, 0);
+        if (sent == -1)
+        {
+            std::cerr << "Failed to send data, terminating connection..." << std::endl;
+            break;
+        }
+        totalSent += sent;
+    }
 }
